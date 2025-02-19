@@ -185,7 +185,7 @@ Write-Host "🔎 Lookup latest 'Cascadia Code' release"
 $tag = (Invoke-WebRequest $gh_releases | ConvertFrom-Json)[0].tag_name
 # project team names release archives without the 'v' in the Tag name
 $filename = $filename.Replace("<version>", $tag.Substring(1))
-$tempFolder = (Join-Path $env:USERPROFILE "AppData\Local\Temp")
+$tempFolder = (Join-Path $env:LOCALAPPDATA "Temp")
 
 $download = "https://github.com/$repository/releases/download/$tag/$filename"
 $dir = "$name-$tag"
@@ -199,13 +199,22 @@ Expand-Archive (Join-Path $env:TEMP $filename) -Force -Destination (Join-Path $t
 $FontList = Get-ChildItem -Path (Join-Path $tempFolder $tag) -Include ('*.fon','*.otf','*.ttc','*.ttf') -Recurse
 foreach ($font in $FontList) {
     Write-Host '🪛 Installing font: ' $Font.BaseName
-    Copy-Item $font (Join-Path $env:USERPROFILE "AppData\Local\Microsoft\Windows\Fonts") -Force -ErrorAction SilentlyContinue # copy to user profile font directory
+    Copy-Item $font (Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts") -Force -ErrorAction SilentlyContinue # copy to user profile font directory
     New-ItemProperty -Name $font.BaseName -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -PropertyType string -Value $Font.name -ErrorAction SilentlyContinue # register font for current user 
 }
 
-# Cleanup font release files and folders
-Remove-Item (Join-Path $tempFolder $tag) -Recurse -Force -ErrorAction SilentlyContinue 
-Remove-Item (Join-Path $tempFolder $filename) -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $tempFolder $tag) -Recurse -Force -ErrorAction SilentlyContinue  # Cleanup extracted archive folders
+Remove-Item (Join-Path $tempFolder $filename) -Force -ErrorAction SilentlyContinue      # Cleanup downloaded font release
 
+# Set Cascadia Mono NF as default 'Windows Terminal' font
+# --------------------------------------------------------
+# Location of Windows Terminal settings.json:
+# Windows Terminal        : %LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState
+# Windows Terminal Preview: %LOCALAPPDATA%\Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState
+
+$wtSettingsPath = (Join-Path $env:LOCALAPPDATA "Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json")
+$wtSettings = Get-Content -Path $wtSettingsPath | ConvertFrom-Json 
+$wtSettings.profiles.defaults = [PSCustomObject]@{font=[PSCustomObject]@{ "adjustIndistinguishableColors"="indexed"; face="Cascadia Mono NF"; size=11; weight="normal" }}
+$wtSettings | ConvertTo-Json -Depth 10 | Set-Content -Path $wtSettingsPath
 
 ```
