@@ -169,3 +169,43 @@ winget install --id=KeeperSecurity.KeeperDesktop -e
 # Paint.Net 🛡️
 winget install --id=dotPDN.PaintDotNet -e
 ```
+
+### Vanity
+
+```pwsh
+# Install Cascadia Code fonts
+# NF (Nerd Font) variant adds symbols to terminal window
+# 🔗 https://github.com/microsoft/cascadia-code
+
+$repository = "microsoft/cascadia-code"
+$gh_releases = "https://api.github.com/repos/$repo/releases"
+$filename = "CascadiaCode-<version>.zip"
+
+Write-Host "🔎 Lookup latest 'Cascadia Code' release"
+$tag = (Invoke-WebRequest $gh_releases | ConvertFrom-Json)[0].tag_name
+# project team names release archives without the 'v' in the Tag name
+$filename = $filename.Replace("<version>", $tag.Substring(1))
+$tempFolder = (Join-Path $env:USERPROFILE "AppData\Local\Temp")
+
+$download = "https://github.com/$repository/releases/download/$tag/$filename"
+$dir = "$name-$tag"
+
+Write-Host "🌍 Dowloading latest release"
+Invoke-WebRequest $download -Out (Join-Path $tempFolder $filename)
+
+Write-Host "📤 Extracting release archive"
+Expand-Archive (Join-Path $env:TEMP $filename) -Force -Destination (Join-Path $tempFolder $tag)
+
+$FontList = Get-ChildItem -Path (Join-Path $tempFolder $tag) -Include ('*.fon','*.otf','*.ttc','*.ttf') -Recurse
+foreach ($font in $FontList) {
+    Write-Host '🪛 Installing font: ' $Font.BaseName
+    Copy-Item $font (Join-Path $env:USERPROFILE "AppData\Local\Microsoft\Windows\Fonts") -Force -ErrorAction SilentlyContinue # copy to user profile font directory
+    New-ItemProperty -Name $font.BaseName -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -PropertyType string -Value $Font.name -ErrorAction SilentlyContinue # register font for current user 
+}
+
+# Cleanup font release files and folders
+Remove-Item (Join-Path $tempFolder $tag) -Recurse -Force -ErrorAction SilentlyContinue 
+Remove-Item (Join-Path $tempFolder $filename) -Force -ErrorAction SilentlyContinue
+
+
+```
