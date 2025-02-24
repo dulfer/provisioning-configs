@@ -9,14 +9,14 @@ Documentation around preparing a freshly installed Windows host for work usage.
 Winget package manager and latest PowerShell version are required.
 
 ```pwsh
-# Setup winget package manager
+# Setup winget package manager 🛡️
 Install-Module Microsoft.WinGet.Client
 Repair-WinGetPackageManager -Force -Latest
 
 # Microsoft PowerShell 🛡️
 winget install --id=Microsoft.PowerShell -e
 
-# Allow local script execution
+# Allow local script execution 🛡️
 Set-ExecutionPolicy -ExecutionPolicy Remotesigned
 
 # Create Symlink for PowerShell Modules (storing locally instead of OneDrive) 🛡️
